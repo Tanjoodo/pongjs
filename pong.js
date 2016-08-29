@@ -25,11 +25,14 @@ function createProgram(gl, vertexShader, fragmentShader) {
 	gl.deleteProgram(program);
 }
 
-function drawPaddle() {
+function drawPaddle(posx, posy) {
 	var modelPoints = [ 0, 0,
 						1, 0,
 						1, 5,
 						0, 5 ];
+	paddleBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, paddleBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelPoints), gl.STATIC_DRAW);
 
 }
 
