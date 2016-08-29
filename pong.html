@@ -1,0 +1,38 @@
+<html>
+	<head>
+		<title>Pong</title>
+		<script type="notjs" id="vshader">
+			// an attribute will receice data from a buffer
+			attribute vec4 a_position;
+
+			void main() {
+				gl_Position = a_position;
+			}
+		</script>
+		<script type="notjs" id="fshader">
+			precision mediump float;
+			uniform vec4 uColor;
+
+			void main() {
+				gl_FragColor = uColor;
+			}
+		</script>
+		<script type="text/javascript" src="pong.js" ></script>
+		<style>
+			* {margin: 0; padding: 0;}
+			body, html {height: 100%}
+			#c {
+				position:absolute;
+				width:100%;
+				height:100%;
+			}
+		</style>
+	</head>
+
+	<body>
+		<canvas id="c" ></canvas>
+		<script type="text/javascript">
+			start();
+		</script>
+	</body>
+</html>
