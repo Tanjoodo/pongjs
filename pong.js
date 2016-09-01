@@ -81,15 +81,15 @@ function paddle() {
 	var paddleProgram = createProgram(gl, vertexShader, fragmentShader);
 
 	return {posx:0,
-			speedx:0,
-			speedy:0,
-			posy:0,
-			scaley:50,
-			scalex:50,
-			buffer:paddleBuffer,
-			program:paddleProgram,
-			draw:drawPaddle,
-			update:updatePaddle};
+		speedx:0,
+		speedy:0,
+		posy:0,
+		scaley:50,
+		scalex:50,
+		buffer:paddleBuffer,
+		program:paddleProgram,
+		draw:drawPaddle,
+		update:updatePaddle};
 
 }
 
@@ -143,8 +143,8 @@ function start() {
 	                    0.5, 1,
 	                    0.5, 1,
 	                    -0.5, 1,
-						-0.5, -1,];
-
+			    -0.5, -1,];
+		
 
 	gl.clearColor(0, 0, 0, 1);
 	var primitiveType = gl.TRIANGLES;
