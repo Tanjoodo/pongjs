@@ -24,24 +24,34 @@ function createProgram(gl, vertexShader, fragmentShader) {
 	console.log(gl.getProgramInfoLog(program));
 	gl.deleteProgram(program);
 }
+var gl;
 
-function drawPaddle(posx, posy) {
-	var modelPoints = [ 0, 0,
-						1, 0,
-						1, 5,
-						0, 5 ];
-	paddleBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, paddleBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(modelPoints), gl.STATIC_DRAW);
+function drawPaddle() {
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+	gl.useProgram(this.program);
+	resloc = gl.getUniformLocation(this.program, "res");
+	gl.uniform2f(resloc, res[0], res[1]);
+	trans = gl.getUniformLocation(this.program, "translation");
+	gl.uniform4f(trans, this.posx, this.posy, 0, 0);
+	scale = gl.getUniformLocation(this.program, "scale");
+	gl.uniform4f(scale, this.scalex, this.scaley, 1, 1);
 
+	var positionloc = gl.getAttribLocation(this.program, "a_position");
+	gl.enableVertexAttribArray(positionloc);
+	gl.vertexAttribPointer(positionloc, 2, gl.FLOAT, false, 0, 0);
+
+	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
 
-function start() {
-	var canvas = document.getElementById("c");
-	var gl = canvas.getContext("webgl");
-	if (!gl) {
-		alert("u haff no gl");
-	}
+function updatePaddle() {
+	this.posx += this.speedx;
+	this.posy += this.speedy;
+}
+
+function paddle() {
+	paddleBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, paddleBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(models["paddle"]), gl.STATIC_DRAW);
 
 	var vertexShaderSource = document.getElementById("vshader").text;
 	var fragmentShaderSource = document.getElementById("fshader").text;
@@ -49,37 +59,73 @@ function start() {
 	var vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexShaderSource);
 	var fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentShaderSource);
 
-	var program = createProgram(gl, vertexShader, fragmentShader);
+	var paddleProgram = createProgram(gl, vertexShader, fragmentShader);
 
-	var positionAttributeLocation = gl.getAttribLocation(program, "a_position");
-	var positionBuffer = gl.createBuffer();
+	return {posx:0,
+			speedx:0,
+			speedy:50/60.0,
+			posy:0,
+			scaley:50,
+			scalex:50,
+			buffer:paddleBuffer,
+			program:paddleProgram,
+			draw:drawPaddle,
+			update:updatePaddle};
 
-	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+}
 
-	var positions = [ 0, 0, 0, 0.5, 0.7, 0, ];
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-	gl.enableVertexAttribArray(positionAttributeLocation);
+var gameObjects = [];
+var models = [];
+var paddleTransY = 55;
+var paddleSpeedY = 120;
+var paddleBuffer;
+var res;
 
-	var size = 2;
-	var type = gl.FLOAT;
-	var normalize = false;
-	var stride = 0;
-	var offset = 0
-		gl.vertexAttribPointer(positionAttributeLocation, size, type, normalize, 
-				stride, offset);
+function draw() {
+	gl.clear(gl.COLOR_BUFFER_BIT);
+	for (i = 0; i < gameObjects.length; ++i) {
+		gameObjects[i].draw();
+	}
+}
+
+function update() {
+	for (i = 0; i < gameObjects.length; ++i) {
+		gameObjects[i].update();
+	}
+}
+
+function tick() {
+	update();
+	draw();
+	requestAnimationFrame(tick);
+}
+
+function start() {
+	var canvas = document.getElementById("c");
+	gl = canvas.getContext("webgl");
+	if (!gl) {
+		alert("u haff no gl");
+	}
+	
+	models["paddle"] = [-0.5, -1,
+	                    0.5, -1,
+	                    0.5, 1,
+	                    0.5, 1,
+	                    -0.5, 1,
+						-0.5, -1,];
 
 	var canvasWidth = canvas.clientWidth;
 	var canvasHeight = canvas.clientHeight;
-
 	canvas.width = canvasWidth;
 	canvas.height = canvasHeight;
 	console.log(canvasWidth, canvasHeight);
 	gl.viewport(0, 0, canvasWidth, canvasHeight);
+	res = [canvasWidth, canvasHeight];
 
 	gl.clearColor(0, 0, 0, 1);
-	gl.clear(gl.COLOR_BUFFER_BIT);
-	gl.useProgram(program);
 	var primitiveType = gl.TRIANGLES;
-	var count = 3;
-	gl.drawArrays(primitiveType, offset, count);
+	gameObjects[0] = paddle();
+	requestAnimationFrame(tick);
+
+
 }
