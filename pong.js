@@ -42,8 +42,27 @@ function drawPaddle() {
 
 	gl.drawArrays(gl.TRIANGLES, 0, 6);
 }
+var UP_ARROW = 38;
+var DOWN_ARROW = 40;
+var LEFT_ARROW = 37;
+var RIGHT_ARROW = 39;
+
+var gameObjects = [];
+var models = [];
+var keyState = [];
+var paddleTransY = 55;
+var paddleSpeedY = 120;
+var paddleBuffer;
+var res;
 
 function updatePaddle() {
+	if (keyState[UP_ARROW] == true) {
+		this.speedy = 1000/60.0;
+	} else if (keyState[DOWN_ARROW] == true) {
+		this.speedy = -1000/60.0;
+	} else if (keyState[UP_ARROW] == false || keyState[DOWN_ARROW] == true) {
+		this.speedy = 0;
+	}
 	this.posx += this.speedx;
 	this.posy += this.speedy;
 }
@@ -63,7 +82,7 @@ function paddle() {
 
 	return {posx:0,
 			speedx:0,
-			speedy:50/60.0,
+			speedy:0,
 			posy:0,
 			scaley:50,
 			scalex:50,
@@ -74,14 +93,18 @@ function paddle() {
 
 }
 
-var gameObjects = [];
-var models = [];
-var paddleTransY = 55;
-var paddleSpeedY = 120;
-var paddleBuffer;
-var res;
 
+function resize() {
+	var canvas = document.getElementById("c");
+	var canvasWidth = canvas.clientWidth;
+	var canvasHeight = canvas.clientHeight;
+	canvas.width = canvasWidth;
+	canvas.height = canvasHeight;
+	gl.viewport(0, 0, canvasWidth, canvasHeight);
+	res = [canvasWidth, canvasHeight];
+}
 function draw() {
+	resize();
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	for (i = 0; i < gameObjects.length; ++i) {
 		gameObjects[i].draw();
@@ -100,6 +123,14 @@ function tick() {
 	requestAnimationFrame(tick);
 }
 
+function handleKeyDown(event) {
+	keyState[event.keyCode] = true;
+}
+
+function handleKeyUp(event) {
+	keyState[event.keyCode] = false;
+}
+
 function start() {
 	var canvas = document.getElementById("c");
 	gl = canvas.getContext("webgl");
@@ -114,18 +145,14 @@ function start() {
 	                    -0.5, 1,
 						-0.5, -1,];
 
-	var canvasWidth = canvas.clientWidth;
-	var canvasHeight = canvas.clientHeight;
-	canvas.width = canvasWidth;
-	canvas.height = canvasHeight;
-	console.log(canvasWidth, canvasHeight);
-	gl.viewport(0, 0, canvasWidth, canvasHeight);
-	res = [canvasWidth, canvasHeight];
 
 	gl.clearColor(0, 0, 0, 1);
 	var primitiveType = gl.TRIANGLES;
 	gameObjects[0] = paddle();
-	requestAnimationFrame(tick);
 
+	document.onkeydown = handleKeyDown;
+	document.onkeyup = handleKeyUp;
+
+	requestAnimationFrame(tick);
 
 }
