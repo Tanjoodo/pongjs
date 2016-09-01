@@ -80,7 +80,7 @@ function paddle() {
 
 	var paddleProgram = createProgram(gl, vertexShader, fragmentShader);
 
-	return {posx:0,
+	return {posx:30,
 		speedx:0,
 		speedy:0,
 		posy:0,
@@ -138,12 +138,12 @@ function start() {
 		alert("u haff no gl");
 	}
 	
-	models["paddle"] = [-0.5, -1,
-	                    0.5, -1,
-	                    0.5, 1,
-	                    0.5, 1,
-	                    -0.5, 1,
-			    -0.5, -1,];
+	models["paddle"] = [-0.3, -1.5,
+	                    0.3, -1.5,
+	                    0.3, 1.5,
+	                    0.3, 1.5,
+	                    -0.3, 1.5,
+			    -0.3, -1.5,];
 		
 
 	gl.clearColor(0, 0, 0, 1);
