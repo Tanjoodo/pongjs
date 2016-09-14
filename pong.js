@@ -55,16 +55,19 @@ var paddleSpeedY = 120;
 var paddleBuffer;
 var res;
 
-function updatePaddle() {
+var deltas = [];
+var di = 0;
+function updatePaddle(delta) {
 	if (keyState[UP_ARROW] == true) {
-		this.speedy = 1000/60.0;
+		this.speedy = 100/60.0;
 	} else if (keyState[DOWN_ARROW] == true) {
-		this.speedy = -1000/60.0;
+		this.speedy = -100/60.0;
 	} else if (keyState[UP_ARROW] == false || keyState[DOWN_ARROW] == true) {
 		this.speedy = 0;
 	}
-	this.posx += this.speedx;
-	this.posy += this.speedy;
+	this.posx += this.speedx * delta;
+	this.posy += this.speedy * delta;
+	deltas[++di%10] = delta;
 }
 
 function paddle() {
@@ -111,20 +114,25 @@ function draw() {
 	}
 }
 
-function update() {
+function update(delta) {
 	for (i = 0; i < gameObjects.length; ++i) {
-		gameObjects[i].update();
+		gameObjects[i].update(delta);
 	}
 }
 
+var lastTimeStamp = new Date().getTime();
 function tick() {
-	update();
+	currentTimeStamp = new Date().getTime();
+	var delta = currentTimeStamp - lastTimeStamp;
+	update(delta);
 	draw();
+	lastTimeStamp = currentTimeStamp;
 	requestAnimationFrame(tick);
 }
 
 function handleKeyDown(event) {
 	keyState[event.keyCode] = true;
+	if (event.keyCode == RIGHT_ARROW) console.log(deltas);
 }
 
 function handleKeyUp(event) {
