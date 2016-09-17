@@ -157,7 +157,7 @@ function handleKeyUp(event) {
 }
 
 function handleMouseMove(event) {
-	mouseX = (event.clientX) * 2;
+	mouseX = event.clientX * 2;
 	mouseY = (canvasHeight - event.clientY) * 2;
 }
 
@@ -172,7 +172,8 @@ function handleMouseUp(event) {
 
 function handleTouchMove(event) {
 	mouseDown = true;
-	handleMouseMove(event);
+	mouseY = (canvasHeight - event.touches[0].clientY) * 2;
+	mouseX = event.touches[0].clientX * 2;
 }
 
 function start() {
