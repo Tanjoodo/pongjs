@@ -47,6 +47,10 @@ var DOWN_ARROW = 40;
 var LEFT_ARROW = 37;
 var RIGHT_ARROW = 39;
 
+var mouseX = 0;
+var mouseY = 0;
+var mouseDown = false;
+
 var gameObjects = [];
 var models = [];
 var keyState = [];
@@ -57,6 +61,9 @@ var res;
 
 var deltas = [];
 var di = 0;
+
+var canvasWidth;
+var canvasHeight;
 function updatePaddle(delta) {
 	if (keyState[UP_ARROW] == true) {
 		this.speedy = 100/60.0;
@@ -68,6 +75,11 @@ function updatePaddle(delta) {
 	this.posx += this.speedx * delta;
 	this.posy += this.speedy * delta;
 	deltas[++di%10] = delta;
+	 
+	if (mouseDown) {
+		this.posy = mouseY;
+	}
+	
 }
 
 function paddle() {
@@ -99,8 +111,8 @@ function paddle() {
 
 function resize() {
 	var canvas = document.getElementById("c");
-	var canvasWidth = canvas.clientWidth;
-	var canvasHeight = canvas.clientHeight;
+	canvasWidth = canvas.clientWidth;
+	canvasHeight = canvas.clientHeight;
 	canvas.width = canvasWidth;
 	canvas.height = canvasHeight;
 	gl.viewport(0, 0, canvasWidth, canvasHeight);
@@ -139,6 +151,20 @@ function handleKeyUp(event) {
 	keyState[event.keyCode] = false;
 }
 
+function handleMouseMove(event) {
+	mouseX = (event.clientX) * 2;
+	mouseY = (canvasHeight - event.clientY) * 2;
+}
+
+function handleMouseDown(event) {
+	mouseDown = true;
+	console.log(mouseY);
+}
+
+function handleMouseUp(event) {
+	mouseDown = false;
+}
+
 function start() {
 	var canvas = document.getElementById("c");
 	gl = canvas.getContext("webgl");
@@ -160,6 +186,12 @@ function start() {
 
 	document.onkeydown = handleKeyDown;
 	document.onkeyup = handleKeyUp;
+	document.onmousemove = handleMouseMove;
+	document.onmousedown = handleMouseDown;
+	document.onmouseup = handleMouseUp;
+
+	resize();
+	console.log(canvasHeight);
 
 	requestAnimationFrame(tick);
 
