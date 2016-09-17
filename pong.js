@@ -118,6 +118,7 @@ function resize() {
 	gl.viewport(0, 0, canvasWidth, canvasHeight);
 	res = [canvasWidth, canvasHeight];
 }
+
 function draw() {
 	resize();
 	gl.clear(gl.COLOR_BUFFER_BIT);
@@ -189,6 +190,7 @@ function start() {
 	document.onmousemove = handleMouseMove;
 	document.onmousedown = handleMouseDown;
 	document.onmouseup = handleMouseUp;
+	document.ontouchmove = handleMouseMove;
 
 	resize();
 	console.log(canvasHeight);
