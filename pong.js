@@ -82,6 +82,10 @@ function updatePaddle(delta) {
 	
 }
 
+function UpdatePaddleTouch() {
+	this.posy = mouseY;
+}
+
 function paddle() {
 	paddleBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, paddleBuffer);
@@ -166,6 +170,11 @@ function handleMouseUp(event) {
 	mouseDown = false;
 }
 
+function handleTouchMove(event) {
+	mouseDown = true;
+	handleMouseMove(event);
+}
+
 function start() {
 	var canvas = document.getElementById("c");
 	gl = canvas.getContext("webgl");
@@ -190,7 +199,7 @@ function start() {
 	document.onmousemove = handleMouseMove;
 	document.onmousedown = handleMouseDown;
 	document.onmouseup = handleMouseUp;
-	document.ontouchmove = handleMouseMove;
+	document.ontouchmove = handleTouchMove;
 
 	resize();
 	console.log(canvasHeight);
