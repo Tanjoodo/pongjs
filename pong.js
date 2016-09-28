@@ -7,7 +7,7 @@ function createShader(gl, type, source) {
 		return shader;
 	}
 
-	console.log(gl.getShaderInfoLog(shader));
+	//console.log(gl.getShaderInfoLog(shader));
 	gl.deleteShader(shader);
 }
 
@@ -21,7 +21,7 @@ function createProgram(gl, vertexShader, fragmentShader) {
 		return program;
 	}
 
-	console.log(gl.getProgramInfoLog(program));
+	//console.log(gl.getProgramInfoLog(program));
 	gl.deleteProgram(program);
 }
 
@@ -69,8 +69,9 @@ function aabbIntersects(aabb)
 	return false;
 }
 
-function aabbUpdate(delta) {
-	var points = [];
+function updateAabb(delta) {
+	this.x = this.owner.posx;
+	this.y = this.owner.posy;
 }
 
 function centerToBottomLeft(x, y, w, h) {
@@ -90,7 +91,7 @@ var mouseX = 0;
 var mouseY = 0;
 var mouseDown = false;
 
-var DRAW_AABB = true;
+var DRAW_AABB = false;
 var aabbs = [];
 
 var gameObjects = [];
@@ -122,30 +123,27 @@ function drawAabb() {
 	var centerPoint = bottomLeftToCenter(this.x, this.y, this.w, this.h);
 	gl.uniform4f(trans, centerPoint.x, centerPoint.y, 0, 0);
 	gl.uniform4f(scale, this.owner.scalex, this.owner.scaley, 1, 1);
-	gl.uniform4f(color, 0, 0, 1, 1);
+	gl.uniform4f(color, 0, 1, 0, 1);
 
 	var positionloc = gl.getAttribLocation(aabb.program, "a_position");
 	gl.enableVertexAttribArray(positionloc);
 	gl.vertexAttribPointer(positionloc, 2, gl.FLOAT, false, 0, 0);
 
-	gl.drawArrays(gl.LINE_STRIP, 0, 4);
+	gl.drawArrays(gl.LINE_STRIP, 0, this.modelPoints);
+	//console.log(this.x, this.y);
 
 }
 
 // owner is an object that contains these fields: posx, posy, scalex, scaley
-function aabb(x ,y, w, h, owner) {
+function aabb(x ,y, w, h, owner, model) {
 	var bottomLeft = centerToBottomLeft(x, y, w, h);
 	var new_x = bottomLeft.x;
 	var new_y = bottomLeft.y;
 
 	var buffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
-	var points = [
-		new_x, new_y,
-		new_x + w, new_y,
-		new_x + w, new_y + h,
-		new_x, new_y + h
-	];
+
+	var points = model;
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
 
 	var myInstance = {
@@ -155,10 +153,12 @@ function aabb(x ,y, w, h, owner) {
 		h:h,
 		buffer:buffer,
 		owner:owner,
-		update:aabbUpdate,
+		update:updateAabb,
 		draw:drawAabb,
-		intersects:aabbIntersects
+		intersects:aabbIntersects,
+		modelPoints:points.length/2
 	};
+	gameObjects.push(myInstance);
 
 	return myInstance;
 }
@@ -174,7 +174,7 @@ function aabbSetUpStatic() {
 	var program = createProgram(gl, vShader, fShader);
 
 	aabb.program = program;
-	console.log(aabb.program);
+	//console.log(aabb.program);
 
 }
 
@@ -193,6 +193,8 @@ function updatePaddle(delta) {
 	if (mouseDown) {
 		this.posy = mouseY;
 	}
+
+	this.aabb.update(delta);
 	
 }
 
@@ -232,7 +234,7 @@ function paddle() {
 		update:updatePaddle
 	};
 
-	var myAabb = new aabb(posx, posy, w, h, myInstance); 
+	var myAabb = new aabb(posx, posy, w, h, myInstance, models["paddle"]); 
 
 	myInstance.aabb = myAabb;
 
@@ -277,7 +279,7 @@ function tick() {
 
 function handleKeyDown(event) {
 	keyState[event.keyCode] = true;
-	if (event.keyCode == RIGHT_ARROW) console.log(deltas);
+	//if (event.keyCode == RIGHT_ARROW) console.log(deltas);
 }
 
 function handleKeyUp(event) {
@@ -291,7 +293,7 @@ function handleMouseMove(event) {
 
 function handleMouseDown(event) {
 	mouseDown = true;
-	console.log(mouseY);
+	//console.log(mouseY);
 }
 
 function handleMouseUp(event) {
@@ -331,9 +333,9 @@ function start() {
 	document.ontouchmove = handleTouchMove;
 
 	resize();
-	console.log(canvasHeight);
+	//console.log(canvasHeight);
 	aabbSetUpStatic();
-	gl.lineWidth(5);
+	gl.lineWidth(3);
 
 	requestAnimationFrame(tick);
 
