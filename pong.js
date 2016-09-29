@@ -91,7 +91,7 @@ var mouseX = 0;
 var mouseY = 0;
 var mouseDown = false;
 
-var DRAW_AABB = false;
+var DRAW_AABB = true;
 var aabbs = [];
 
 var gameObjects = [];
@@ -144,6 +144,7 @@ function aabb(x ,y, w, h, owner, model) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
 	var points = model;
+	console.log(points);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
 
 	var myInstance = {
@@ -176,6 +177,86 @@ function aabbSetUpStatic() {
 	aabb.program = program;
 	//console.log(aabb.program);
 
+}
+
+function ball() {
+	var ballBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, ballBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(models["ball"]), gl.STATIC_DRAW);
+
+	var vShaderSource = document.getElementById("vshader").text;
+	var fShaderSource = document.getElementById("fshader").text;
+
+	var vShader = createShader(gl, gl.VERTEX_SHADER, vShaderSource);
+	var fShader = createShader(gl, gl.FRAGMENT_SHADER, fShaderSource);
+
+	var program = createProgram(gl, vShader, fShader);
+
+
+	var ballBuffer = gl.createBuffer();
+	gl.bindBuffer(gl.ARRAY_BUFFER, ballBuffer);
+	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(models["ball"]), gl.STATIC_DRAW);
+
+	ball.buffer = ballBuffer;
+	ball.model = models["ball"];
+
+	var vShaderSource = document.getElementById("vshader").text;
+	var fShaderSource = document.getElementById("fshader").text;
+
+	var vShader = createShader(gl, gl.VERTEX_SHADER, vShaderSource);
+	var fShader = createShader(gl, gl.FRAGMENT_SHADER, fShaderSource);
+
+	var program = createProgram(gl, vShader, fShader);
+
+	ball.program = program;
+	var myInstance = {
+		posx:res[0],
+		posy:res[1],
+		scalex:50,
+		scaley:50,
+		speedx:-1,
+		speedy:-1,
+		buffer:ballBuffer,
+		program:program,
+		model:models["ball"],
+		draw:drawBall,
+		update:updateBall,
+	};
+	var myAabb = aabb(res[0]/2, res[1]/2, 1, 1, myInstance, models["ball"]);
+	myInstance.aabb = myAabb;
+
+	return myInstance;
+
+}
+
+function drawBall()  {
+	gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+	gl.useProgram(this.program);
+	var resloc = gl.getUniformLocation(this.program, "res");
+	var trans = gl.getUniformLocation(this.program, "translation");
+	var scale = gl.getUniformLocation(this.program, "scale");
+	var color = gl.getUniformLocation(this.program, "uColor");
+
+	gl.uniform2f(resloc, res[0], res[1]);
+	gl.uniform4f(trans, this.posx, this.posy, 0, 0);
+	gl.uniform4f(scale, this.scalex, this.scaley, 1, 1);
+	gl.uniform4f(color, 1, 1, 1, 1);
+
+	var positionloc = gl.getAttribLocation(this.program, "a_position");
+	gl.enableVertexAttribArray(positionloc);
+	gl.vertexAttribPointer(positionloc, 2, gl.FLOAT, false, 0, 0);
+
+	gl.drawArrays(gl.TRIANGLES, 0, 6);
+
+	if (DRAW_AABB) {
+		this.aabb.draw();
+	}
+}
+
+function updateBall (delta) {
+	this.posx += this.speedx * delta;
+	this.posy += this.speedy * delta;
+	this.aabb.update(delta);
 }
 
 function updatePaddle(delta) {
@@ -320,10 +401,22 @@ function start() {
 	                    -0.3, 1.5,
 			    -0.3, -1.5,];
 		
+	models["ball"] = [-0.5, -0.5,
+			0.5, -0.5,
+			0.5, 0.5,
+			0.5, 0.5,
+			-0.5, 0.5,
+			-0.5, -0.5];
 
+	console.log(models["ball"]);
 	gl.clearColor(0, 0, 0, 1);
 	var primitiveType = gl.TRIANGLES;
+	resize();
+
+	aabbSetUpStatic();
+
 	gameObjects[0] = paddle();
+	gameObjects[1] = new ball();
 
 	document.onkeydown = handleKeyDown;
 	document.onkeyup = handleKeyUp;
@@ -332,9 +425,7 @@ function start() {
 	document.onmouseup = handleMouseUp;
 	document.ontouchmove = handleTouchMove;
 
-	resize();
 	//console.log(canvasHeight);
-	aabbSetUpStatic();
 	gl.lineWidth(3);
 
 	requestAnimationFrame(tick);
