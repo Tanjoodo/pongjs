@@ -7,7 +7,6 @@ function createShader(gl, type, source) {
 		return shader;
 	}
 
-	//console.log(gl.getShaderInfoLog(shader));
 	gl.deleteShader(shader);
 }
 
@@ -21,7 +20,6 @@ function createProgram(gl, vertexShader, fragmentShader) {
 		return program;
 	}
 
-	//console.log(gl.getProgramInfoLog(program));
 	gl.deleteProgram(program);
 }
 
@@ -54,28 +52,53 @@ function drawPaddle() {
 // magic code from another pong project
 function aabbIntersects(aabb)
 {
-	if ((this.x >= aabb.x) && (this.x <= aabb.x + aabb.w))
-	{
-		if ((this.y >= aabb.y) && (this.y <= aabb.y + aabb.h))
-			return true;
+	var myMin = {x:this.x, y:this.y + this.h};
+	var myMax = {x:this.x + this.w, y:this.y};
+	
+
+	var oMin = {x:aabb.x, y:aabb.y + aabb.h};
+	var oMax = {x:aabb.x + aabb.w, y:aabb.y};
+
+	debugger;
+	if (myMax.x < oMin.x){
+		return false;
+	}
+	if (myMin.x > oMax.x){
+		return false;
+	}
+	if (myMax.y > oMin.y){
+		return false;
+	}
+	if (myMin.y < oMax.y){
+		return false;
+	}
+	
+	if (!this.owner.equals(aabb.owner)) { //don't collide with yourself
+		return true;
 	}
 
-	if ((this.x + this.w >= aabb.x) 
-		&& ((this.x + this.w) <= (aabb.x + aabb.w + this.w)))
-	{
-		if ((this.y + this.h >= aabb.y) && (this.y + this.h <= aabb.y + aabb.h + this.h))
-			return true;
-	}
 	return false;
 }
 
 function updateAabb(delta) {
-	this.x = this.owner.posx;
-	this.y = this.owner.posy;
+	var cornerPoint = centerToBottomLeft(this.owner.posx, this.owner.posy, this.w, this.h);
+	this.x = cornerPoint.x;
+	this.y = cornerPoint.y;
+
+	//this.x = 0;
+	//this.y = 0;
+
+	for (var i = 0; i < aabbs.length; ++i) {
+		if (this.intersects(aabbs[i])) {
+			this.owner.handleCollision(aabbs[i].owner);
+		}
+	}
+
 }
 
-function centerToBottomLeft(x, y, w, h) {
-	return {x:x-w/2, y:y-h/2};
+function centerToBottomLeft(ox, oy, w, h) {
+	var me = {x:ox-w/2, y:oy-h/2};
+	return me;
 }
 
 function bottomLeftToCenter(x,y, w, h) {
@@ -86,12 +109,14 @@ var UP_ARROW = 38;
 var DOWN_ARROW = 40;
 var LEFT_ARROW = 37;
 var RIGHT_ARROW = 39;
+var TYPE_PADDLE = 0;
+var TYPE_BALL = 1;
 
 var mouseX = 0;
 var mouseY = 0;
 var mouseDown = false;
 
-var DRAW_AABB = true;
+var DRAW_AABB = false;
 var aabbs = [];
 
 var gameObjects = [];
@@ -110,6 +135,7 @@ var canvasHeight;
 
 var testAabb;
 var testPaddle;
+
 
 function drawAabb() {
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
@@ -130,7 +156,6 @@ function drawAabb() {
 	gl.vertexAttribPointer(positionloc, 2, gl.FLOAT, false, 0, 0);
 
 	gl.drawArrays(gl.LINE_STRIP, 0, this.modelPoints);
-	//console.log(this.x, this.y);
 
 }
 
@@ -144,7 +169,6 @@ function aabb(x ,y, w, h, owner, model) {
 	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
 
 	var points = model;
-	console.log(points);
 	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(points), gl.STATIC_DRAW);
 
 	var myInstance = {
@@ -159,6 +183,8 @@ function aabb(x ,y, w, h, owner, model) {
 		intersects:aabbIntersects,
 		modelPoints:points.length/2
 	};
+
+	aabbs.push(myInstance);
 	gameObjects.push(myInstance);
 
 	return myInstance;
@@ -175,8 +201,13 @@ function aabbSetUpStatic() {
 	var program = createProgram(gl, vShader, fShader);
 
 	aabb.program = program;
-	//console.log(aabb.program);
 
+}
+
+function handleCollisionBall(collider) {
+	if (collider.type == TYPE_PADDLE) {
+		this.speedx *= -1;
+	}
 }
 
 function ball() {
@@ -214,15 +245,18 @@ function ball() {
 		posy:res[1],
 		scalex:50,
 		scaley:50,
-		speedx:-1,
-		speedy:-1,
+		speedx:-0.5,
+		speedy:-0.3,
 		buffer:ballBuffer,
 		program:program,
 		model:models["ball"],
 		draw:drawBall,
 		update:updateBall,
+		handleCollision:handleCollisionBall,
+		type:TYPE_BALL,
+		equals:equalsGeneric
 	};
-	var myAabb = aabb(res[0]/2, res[1]/2, 1, 1, myInstance, models["ball"]);
+	var myAabb = aabb(res[0]/2, res[1]/2, 1 * myInstance.scalex, 1 * myInstance.scaley, myInstance, models["ball"]);
 	myInstance.aabb = myAabb;
 
 	return myInstance;
@@ -253,6 +287,7 @@ function drawBall()  {
 	}
 }
 
+var co = 0;
 function updateBall (delta) {
 	this.posx += this.speedx * delta;
 	this.posy += this.speedy * delta;
@@ -270,19 +305,28 @@ function updatePaddle(delta) {
 	this.posx += this.speedx * delta;
 	this.posy += this.speedy * delta;
 	deltas[++di%10] = delta;
-	 
 	if (mouseDown) {
 		this.posy = mouseY;
 	}
 
+
 	this.aabb.update(delta);
-	
 }
 
 function UpdatePaddleTouch() {
 	this.posy = mouseY;
 }
 
+function handleCollisionPaddle(collider) {
+	return;
+}
+
+function equalsGeneric(o) {
+	if (this.type != o.type || this.posx != o.posx || this.posy != o.posy) {
+		return false;
+	}
+	return true;
+}
 function paddle() {
 	paddleBuffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, paddleBuffer);
@@ -300,7 +344,7 @@ function paddle() {
 	var posy = 0;
 	var model = models["paddle"];
 	var w = Math.abs(model[0] - model[2]);
-	var h = Math.abs(model[1] - model[3]);
+	var h = Math.abs(model[1] - model[5]);
 
 	myInstance = {
 		posx:posx,
@@ -312,10 +356,13 @@ function paddle() {
 		buffer:paddleBuffer,
 		program:paddleProgram,
 		draw:drawPaddle,
-		update:updatePaddle
+		update:updatePaddle,
+		handleCollision:handleCollisionPaddle,
+		type:TYPE_PADDLE,
+		equals:equalsGeneric
 	};
 
-	var myAabb = new aabb(posx, posy, w, h, myInstance, models["paddle"]); 
+	var myAabb = new aabb(posx, posy, w * myInstance.scalex, h * myInstance.scaley, myInstance, models["paddle"]); 
 
 	myInstance.aabb = myAabb;
 
@@ -360,7 +407,6 @@ function tick() {
 
 function handleKeyDown(event) {
 	keyState[event.keyCode] = true;
-	//if (event.keyCode == RIGHT_ARROW) console.log(deltas);
 }
 
 function handleKeyUp(event) {
@@ -374,7 +420,6 @@ function handleMouseMove(event) {
 
 function handleMouseDown(event) {
 	mouseDown = true;
-	//console.log(mouseY);
 }
 
 function handleMouseUp(event) {
@@ -408,7 +453,6 @@ function start() {
 			-0.5, 0.5,
 			-0.5, -0.5];
 
-	console.log(models["ball"]);
 	gl.clearColor(0, 0, 0, 1);
 	var primitiveType = gl.TRIANGLES;
 	resize();
@@ -425,7 +469,6 @@ function start() {
 	document.onmouseup = handleMouseUp;
 	document.ontouchmove = handleTouchMove;
 
-	//console.log(canvasHeight);
 	gl.lineWidth(3);
 
 	requestAnimationFrame(tick);
