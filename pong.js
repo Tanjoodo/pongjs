@@ -59,7 +59,6 @@ function aabbIntersects(aabb)
 	var oMin = {x:aabb.x, y:aabb.y + aabb.h};
 	var oMax = {x:aabb.x + aabb.w, y:aabb.y};
 
-	debugger;
 	if (myMax.x < oMin.x){
 		return false;
 	}
