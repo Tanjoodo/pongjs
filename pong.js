@@ -84,9 +84,6 @@ function updateAabb(delta) {
 	this.x = cornerPoint.x;
 	this.y = cornerPoint.y;
 
-	//this.x = 0;
-	//this.y = 0;
-
 	for (var i = 0; i < aabbs.length; ++i) {
 		if (this.intersects(aabbs[i])) {
 			this.owner.handleCollision(aabbs[i].owner);
@@ -108,8 +105,13 @@ var UP_ARROW = 38;
 var DOWN_ARROW = 40;
 var LEFT_ARROW = 37;
 var RIGHT_ARROW = 39;
+var SPACE = 32;
+var D_KEY = 68;
+
 var TYPE_PADDLE = 0;
 var TYPE_BALL = 1;
+var TYPE_BOUND = 2;
+var TYPE_VERT_BOUND = 3;
 
 var mouseX = 0;
 var mouseY = 0;
@@ -134,7 +136,6 @@ var canvasHeight;
 
 var testAabb;
 var testPaddle;
-
 
 function drawAabb() {
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
@@ -184,7 +185,6 @@ function aabb(x ,y, w, h, owner, model) {
 	};
 
 	aabbs.push(myInstance);
-	gameObjects.push(myInstance);
 
 	return myInstance;
 }
@@ -205,6 +205,11 @@ function aabbSetUpStatic() {
 
 function handleCollisionBall(collider) {
 	if (collider.type == TYPE_PADDLE) {
+		this.speedx *= -1;
+	} else if (collider.type == TYPE_BOUND) {
+		console.log("COLLIJUN");
+		this.speedy *= -1;
+	} else if (collider.type == TYPE_VERT_BOUND) {
 		this.speedx *= -1;
 	}
 }
@@ -381,7 +386,6 @@ function resize() {
 }
 
 function draw() {
-	resize();
 	gl.clear(gl.COLOR_BUFFER_BIT);
 	for (i = 0; i < gameObjects.length; ++i) {
 		gameObjects[i].draw();
@@ -394,7 +398,7 @@ function update(delta) {
 	}
 }
 
-var lastTimeStamp = new Date().getTime();
+var lastTimeStamp;
 function tick() {
 	currentTimeStamp = new Date().getTime();
 	var delta = currentTimeStamp - lastTimeStamp;
@@ -405,6 +409,11 @@ function tick() {
 }
 
 function handleKeyDown(event) {
+
+	if (event.keyCode == D_KEY) {
+		DRAW_AABB = !DRAW_AABB;
+	}
+
 	keyState[event.keyCode] = true;
 }
 
@@ -429,6 +438,34 @@ function handleTouchMove(event) {
 	mouseDown = true;
 	mouseY = (canvasHeight - event.touches[0].clientY) * 2;
 	mouseX = event.touches[0].clientX * 2;
+}
+
+function bound(x, y, w, h) {
+	var myInstance = {
+		x:x,
+		y:y,
+		w:w,
+		h:h,
+		scalex:w,
+		scaley:h,
+		handleCollision:function(){return},
+		update:function(){return},
+		equals:equalsGeneric,
+		type:TYPE_BOUND,
+		draw:function(){if (DRAW_AABB) this.aabb.draw();}
+	};
+
+	var myAabb = new aabb(x, y, w, h, myInstance, models["ball"]);
+	myInstance.aabb = myAabb;
+	
+	gameObjects.push(myInstance);
+	return myInstance;
+}
+
+function vertBound(x, y, w, h) {
+	var myInstance = bound(x, y, w, h);
+	myInstance.type = TYPE_VERT_BOUND;
+	return  myInstance;
 }
 
 function start() {
@@ -461,6 +498,11 @@ function start() {
 	gameObjects[0] = paddle();
 	gameObjects[1] = new ball();
 
+	var lowerBound = new bound(res[0], 0, 2 * res[0], 1);
+	var upperBound = new bound(res[0], 2 * res[1], 2 * res[0], 1);
+	var rightBound = new vertBound(2*res[0], 0, 1, 4 * res[1]);
+	var leftBound = new vertBound(0, 0, 1, 4*res[1]);
+
 	document.onkeydown = handleKeyDown;
 	document.onkeyup = handleKeyUp;
 	document.onmousemove = handleMouseMove;
@@ -470,6 +512,7 @@ function start() {
 
 	gl.lineWidth(3);
 
+	alert("Click OK when ready!");
+	lastTimeStamp = new Date().getTime();
 	requestAnimationFrame(tick);
-
 }
