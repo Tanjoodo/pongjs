@@ -31,8 +31,6 @@ function drawPaddle() {
 
 	gl.uniform2f(this.resloc, res[0], res[1]);
 	gl.uniform4f(this.trans, this.posx, this.posy, 0, 0);
-	gl.uniform4f(this.scale, this.scalex, this.scaley, 1, 1);
-	gl.uniform4f(this.color, 1, 1, 1, 1);
 
 	var positionloc = gl.getAttribLocation(this.program, "a_position");
 	gl.enableVertexAttribArray(positionloc);
@@ -81,7 +79,7 @@ function aabbIntersects(aabb)
 
 function updateAabb(delta) {
 	this.x = this.owner.posx - this.w/2;
-	this.y =  this.owner.posy - this.w/2;
+	this.y =  this.owner.posy - this.h/2;
 
 	for (var i = 0; i < aabbs.length; ++i) {
 		if (this.intersects(aabbs[i])) {
@@ -262,6 +260,10 @@ function ball() {
 		scale:gl.getUniformLocation(program, "scale"),
 		color:gl.getUniformLocation(program, "uColor")
 	};
+
+	gl.useProgram(myInstance.program);
+	gl.uniform4f(myInstance.scale, myInstance.scalex, myInstance.scaley, 1, 1);
+	gl.uniform4f(myInstance.color, 1, 1, 1, 1);
 	var myAabb = aabb(res[0]/2, res[1]/2, 1 * myInstance.scalex, 1 * myInstance.scaley, myInstance, models["ball"]);
 	myInstance.aabb = myAabb;
 
@@ -275,8 +277,6 @@ function drawBall()  {
 
 	gl.uniform2f(this.resloc, res[0], res[1]);
 	gl.uniform4f(this.trans, this.posx, this.posy, 0, 0);
-	gl.uniform4f(this.scale, this.scalex, this.scaley, 1, 1);
-	gl.uniform4f(this.color, 1, 1, 1, 1);
 
 	var positionloc = gl.getAttribLocation(this.program, "a_position");
 	gl.enableVertexAttribArray(positionloc);
@@ -367,6 +367,10 @@ function paddle() {
 		scale:gl.getUniformLocation(paddleProgram, "scale"),
 		color:gl.getUniformLocation(paddleProgram, "uColor")
 	};
+
+	gl.useProgram(myInstance.program);
+	gl.uniform4f(myInstance.scale, myInstance.scalex, myInstance.scaley, 1, 1);
+	gl.uniform4f(myInstance.color, 1, 1, 1, 1);
 
 	var myAabb = new aabb(posx, posy, w * myInstance.scalex, h * myInstance.scaley, myInstance, models["paddle"]); 
 
