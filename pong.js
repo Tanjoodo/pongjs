@@ -89,15 +89,6 @@ function updateAabb(delta) {
 
 }
 
-/*function centerToBottomLeft(ox, oy, w, h) {
-	var me = {x:ox-w/2, y:oy-h/2};
-	return me;
-}
-
-function bottomLeftToCenter(x,y, w, h) {
-	return {x:x+w/2, y:y+h/2};
-}*/
-
 var UP_ARROW = 38;
 var DOWN_ARROW = 40;
 var LEFT_ARROW = 37;
