@@ -28,15 +28,11 @@ var gl;
 function drawPaddle() {
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
 	gl.useProgram(this.program);
-	var resloc = gl.getUniformLocation(this.program, "res");
-	var trans = gl.getUniformLocation(this.program, "translation");
-	var scale = gl.getUniformLocation(this.program, "scale");
-	var color = gl.getUniformLocation(this.program, "uColor");
 
-	gl.uniform2f(resloc, res[0], res[1]);
-	gl.uniform4f(trans, this.posx, this.posy, 0, 0);
-	gl.uniform4f(scale, this.scalex, this.scaley, 1, 1);
-	gl.uniform4f(color, 1, 1, 1, 1);
+	gl.uniform2f(this.resloc, res[0], res[1]);
+	gl.uniform4f(this.trans, this.posx, this.posy, 0, 0);
+	gl.uniform4f(this.scale, this.scalex, this.scaley, 1, 1);
+	gl.uniform4f(this.color, 1, 1, 1, 1);
 
 	var positionloc = gl.getAttribLocation(this.program, "a_position");
 	gl.enableVertexAttribArray(positionloc);
@@ -52,23 +48,27 @@ function drawPaddle() {
 // magic code from another pong project
 function aabbIntersects(aabb)
 {
-	var myMin = {x:this.x, y:this.y + this.h};
-	var myMax = {x:this.x + this.w, y:this.y};
+	var myMinX = this.x;
+	var myMinY = this.y + this.h;
+	var myMaxX = this.x + this.w;
+	var myMaxY = this.y;
 	
 
-	var oMin = {x:aabb.x, y:aabb.y + aabb.h};
-	var oMax = {x:aabb.x + aabb.w, y:aabb.y};
+	var oMinX = aabb.x;
+	var oMinY = aabb.y + aabb.h;
+	var oMaxX = aabb.x + aabb.w;
+	var oMaxY = aabb.y;
 
-	if (myMax.x < oMin.x){
+	if (myMaxX < oMinX){
 		return false;
 	}
-	if (myMin.x > oMax.x){
+	if (myMinX > oMaxX){
 		return false;
 	}
-	if (myMax.y > oMin.y){
+	if (myMaxY > oMinY){
 		return false;
 	}
-	if (myMin.y < oMax.y){
+	if (myMinY < oMaxY){
 		return false;
 	}
 	
@@ -80,9 +80,8 @@ function aabbIntersects(aabb)
 }
 
 function updateAabb(delta) {
-	var cornerPoint = centerToBottomLeft(this.owner.posx, this.owner.posy, this.w, this.h);
-	this.x = cornerPoint.x;
-	this.y = cornerPoint.y;
+	this.x = this.owner.posx - this.w/2;
+	this.y =  this.owner.posy - this.w/2;
 
 	for (var i = 0; i < aabbs.length; ++i) {
 		if (this.intersects(aabbs[i])) {
@@ -92,14 +91,14 @@ function updateAabb(delta) {
 
 }
 
-function centerToBottomLeft(ox, oy, w, h) {
+/*function centerToBottomLeft(ox, oy, w, h) {
 	var me = {x:ox-w/2, y:oy-h/2};
 	return me;
 }
 
 function bottomLeftToCenter(x,y, w, h) {
 	return {x:x+w/2, y:y+h/2};
-}
+}*/
 
 var UP_ARROW = 38;
 var DOWN_ARROW = 40;
@@ -146,8 +145,9 @@ function drawAabb() {
 	var color = gl.getUniformLocation(aabb.program, "uColor");
 
 	gl.uniform2f(resloc, res[0], res[1]);
-	var centerPoint = bottomLeftToCenter(this.x, this.y, this.w, this.h);
-	gl.uniform4f(trans, centerPoint.x, centerPoint.y, 0, 0);
+	var centerX = this.x + this.w/2;
+	var centerY = this.y + this.h/2;
+	gl.uniform4f(trans, centerX, centerY, 0, 0);
 	gl.uniform4f(scale, this.owner.scalex, this.owner.scaley, 1, 1);
 	gl.uniform4f(color, 0, 1, 0, 1);
 
@@ -161,9 +161,8 @@ function drawAabb() {
 
 // owner is an object that contains these fields: posx, posy, scalex, scaley
 function aabb(x ,y, w, h, owner, model) {
-	var bottomLeft = centerToBottomLeft(x, y, w, h);
-	var new_x = bottomLeft.x;
-	var new_y = bottomLeft.y;
+	var new_x = x - w/2;
+	var new_y = y - h/2;
 
 	var buffer = gl.createBuffer();
 	gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
@@ -207,7 +206,6 @@ function handleCollisionBall(collider) {
 	if (collider.type == TYPE_PADDLE) {
 		this.speedx *= -1;
 	} else if (collider.type == TYPE_BOUND) {
-		console.log("COLLIJUN");
 		this.speedy *= -1;
 	} else if (collider.type == TYPE_VERT_BOUND) {
 		this.speedx *= -1;
@@ -258,7 +256,11 @@ function ball() {
 		update:updateBall,
 		handleCollision:handleCollisionBall,
 		type:TYPE_BALL,
-		equals:equalsGeneric
+		equals:equalsGeneric,
+		resloc:gl.getUniformLocation(program, "res"),
+		trans:gl.getUniformLocation(program, "translation"),
+		scale:gl.getUniformLocation(program, "scale"),
+		color:gl.getUniformLocation(program, "uColor")
 	};
 	var myAabb = aabb(res[0]/2, res[1]/2, 1 * myInstance.scalex, 1 * myInstance.scaley, myInstance, models["ball"]);
 	myInstance.aabb = myAabb;
@@ -270,15 +272,11 @@ function ball() {
 function drawBall()  {
 	gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
 	gl.useProgram(this.program);
-	var resloc = gl.getUniformLocation(this.program, "res");
-	var trans = gl.getUniformLocation(this.program, "translation");
-	var scale = gl.getUniformLocation(this.program, "scale");
-	var color = gl.getUniformLocation(this.program, "uColor");
 
-	gl.uniform2f(resloc, res[0], res[1]);
-	gl.uniform4f(trans, this.posx, this.posy, 0, 0);
-	gl.uniform4f(scale, this.scalex, this.scaley, 1, 1);
-	gl.uniform4f(color, 1, 1, 1, 1);
+	gl.uniform2f(this.resloc, res[0], res[1]);
+	gl.uniform4f(this.trans, this.posx, this.posy, 0, 0);
+	gl.uniform4f(this.scale, this.scalex, this.scaley, 1, 1);
+	gl.uniform4f(this.color, 1, 1, 1, 1);
 
 	var positionloc = gl.getAttribLocation(this.program, "a_position");
 	gl.enableVertexAttribArray(positionloc);
@@ -363,7 +361,11 @@ function paddle() {
 		update:updatePaddle,
 		handleCollision:handleCollisionPaddle,
 		type:TYPE_PADDLE,
-		equals:equalsGeneric
+		equals:equalsGeneric,
+		resloc:gl.getUniformLocation(paddleProgram, "res"),
+		trans:gl.getUniformLocation(paddleProgram, "translation"),
+		scale:gl.getUniformLocation(paddleProgram, "scale"),
+		color:gl.getUniformLocation(paddleProgram, "uColor")
 	};
 
 	var myAabb = new aabb(posx, posy, w * myInstance.scalex, h * myInstance.scaley, myInstance, models["paddle"]); 
@@ -399,8 +401,9 @@ function update(delta) {
 }
 
 var lastTimeStamp;
+var currentTimeStamp;
 function tick() {
-	currentTimeStamp = new Date().getTime();
+	currentTimeStamp = Date.now();
 	var delta = currentTimeStamp - lastTimeStamp;
 	update(delta);
 	draw();
